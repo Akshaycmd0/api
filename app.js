@@ -3,6 +3,7 @@ const app = express();
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const fileUpload = require('express-fileupload');
+const cors = require('cors')
 
 const userRoute = require('./routes/user');
 const courseRoute = require('./routes/course');
@@ -19,6 +20,7 @@ mongoose.connect('mongodb+srv://akshay:1234@cluster0.b2xxgcd.mongodb.net/?retryW
     })
 
 app.use(bodyParser.json())
+app.use(cors())
 
 app.use(fileUpload({
     useTempFiles: true,

@@ -42,7 +42,7 @@ router.post('/signup', (req, res) => {
                     newUser.save()
                         .then(result => {
                             res.status(200).json({
-                                newStudent: result
+                                newUser: result
                             })
                         })
                         .catch(err => {
