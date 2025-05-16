@@ -5,6 +5,8 @@ const Student = require('../model/Student');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const cloudinary = require('cloudinary').v2;
+const Fee = require('../model/Fee');
+const course = require('../model/Course');
 
 cloudinary.config({
     cloud_name: process.env.CLOUD_NAME,
@@ -60,6 +62,39 @@ router.get('/all-students', checkAuth, (req, res) => {
             res.status(200).json({
                 students: result
             })
+        })
+        .catch(err => {
+            res.status(500).json({
+                error: err
+            })
+        })
+})
+
+// get student-detail by id (new added)
+router.get('/student-detail/:id', checkAuth, (req, res) => {
+    const token = req.headers.authorization.split(" ")[1]
+    const verify = jwt.verify(token, 'sbs online classes 123');
+
+    Student.find({ uId: verify.uId, courseId: req.params.courseId })
+        .select('_id uId fillName phone address email courseId imageUrl imageId')
+        .then(result => {
+            Fee.find({ uId: verify.uId, courseId: result.courseId, phone: result.phone })
+                .then(feeData => {
+                    course.findById(result.courseId)
+                        .then(courseDetail => {
+                            res.status(200).json({
+                                studentDetail: result,
+                                feeData: feeData,
+                                courseData: courseDetail
+                            })
+                        })
+                })
+                .catch(err => {
+                    console.log(err)
+                    res.status(500).json({
+                        error: err
+                    })
+                })
         })
         .catch(err => {
             res.status(500).json({
@@ -196,22 +231,22 @@ router.delete('/:id', checkAuth, (req, res) => {
 })
 
 // gett latest 5 students data
-router.get('/latest-students',cheakAuth,(req,res)=>{
+router.get('/latest-students', cheakAuth, (req, res) => {
     const token = req.headers.authorization.split(" ")[1]
     const verify = jwt.verify(token, 'sbs online classes 123');
 
-    Student.find({uId:verify.uId})
-    .sort({$natural:-1}).limit(5)
-    .then(result=>{
-        res.status(500).json({
-            students:result
+    Student.find({ uId: verify.uId })
+        .sort({ $natural: -1 }).limit(5)
+        .then(result => {
+            res.status(500).json({
+                students: result
+            })
         })
-    })
-    .catch(err=>{
-        res.status(500).json({
-            error:err
+        .catch(err => {
+            res.status(500).json({
+                error: err
+            })
         })
-    })
 })
 
 

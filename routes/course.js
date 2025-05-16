@@ -5,7 +5,8 @@ const Course = require('../model/Course');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const cloudinary = require('cloudinary').v2;
-const Student = require('../model/Student')
+const Student = require('../model/Student');
+const Fee = require('../model/Fee');
 
 cloudinary.config({
     cloud_name: process.env.CLOUD_NAME,
@@ -100,9 +101,17 @@ router.delete('/:id', checkAuth, (req, res) => {
                 Course.findByIdAndDelete(req.params.id)
                     .then(result => {
                         cloudinary.uploader.destroy(course.imageId, (deletedImage) => {
-                            res.status(200).json({
-                                result: result
-                            })
+                            Student.deleteMany({ courseId: req.params.id })
+                                .then(data => {
+                                    res.status(200).json({
+                                        result: data
+                                    })
+                                })
+                                .catch(err => {
+                                    res.status(500).json({
+                                        msg: err
+                                    })
+                                })
                         })
                     })
                     .catch(err => {
@@ -116,6 +125,12 @@ router.delete('/:id', checkAuth, (req, res) => {
                     msg: 'bad request'
                 })
             }
+        })
+        .catch(err => {
+            console.log(err)
+            res.status(500).json({
+                msg: err
+            })
         })
 })
 
@@ -213,7 +228,38 @@ router.get('/latest-courses', cheakAuth, (req, res) => {
         })
 })
 
+// Home Api
+router.get('/home', checkAuth, async (req, res) => {
+    try {
+        const token = req.headers.authorization.split(" ")[1]
+        const verify = jwt.verify(token, 'sbs online classes 123');
+        const newFees = await fee.find({ uId: verify.uId }).sort({ $natural: -1 }).limit(5)
+        const newStudents = await Student.find({ uId: verify.uId }).sort({ $natural: -1 }).limit(5)
+        const totalCourses = await Course.countDocuments({ uId: verify.uId })
+        const totalStudents = await Student.countDocuments({ uId: verify.uId })
+        const totalAmount = await fee.aggregate([
+            { $match: { uId: verify.uId } },
+            {
+                $group: {
+                    _id: null, total: { $sum: "$amount" }
+                }
+            }
+        ])
 
+        res.status(200).json({
+            fees: newFees,
+            students: newStudents,
+            totalCourses: totalCourses,
+            totalStudents: totalStudents,
+            totalAmount: totalAmount.langth > 0 ? totalAmount[0].total : 0
+        })
+    }
+    catch (err) {
+        res.status(500).json({
+            error: err
+        })
+    }
+})
 
 
 module.exports = router;

@@ -3,7 +3,7 @@ const checkAuth = require('../middleware/checkAuth');
 const router = express.Router()
 const jwt = require('jsonwebtoken')
 const mongoose = require('mongoose');
-const fee = require('../model/fee');
+const fee = require('../model/Fee');
 
 
 router.post('/add-fee', checkAuth, (req, res) => {
